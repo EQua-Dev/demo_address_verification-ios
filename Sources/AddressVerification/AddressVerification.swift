@@ -46,12 +46,18 @@ public struct AddressVerificationField: View {
     }
     
     public var body: some View {
-        Group {
-            if isLoading {
-                loadingView
-            } else {
-                mainContentView
+        if #available(macOS 12.0, *) {
+            Group {
+                if isLoading {
+                    loadingView
+                } else {
+                    mainContentView
+                }
+            } .task {
+                await fetchConfiguration()
             }
+        } else {
+            // Fallback on earlier versions
         }
     }
     
