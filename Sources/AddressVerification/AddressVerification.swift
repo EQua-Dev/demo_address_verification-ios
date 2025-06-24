@@ -46,19 +46,20 @@ public struct AddressVerificationField: View {
     }
     
     public var body: some View {
-        if #available(macOS 12.0, *) {
+        
             Group {
                 if isLoading {
                     loadingView
                 } else {
                     mainContentView
                 }
-            } .task {
-                await fetchConfiguration()
+            }   .onAppear {
+                // Use Task for iOS 14 compatibility
+                Task {
+                    await fetchConfiguration()
+                }
             }
-        } else {
-            // Fallback on earlier versions
-        }
+        
     }
     
     // MARK: - Subviews
