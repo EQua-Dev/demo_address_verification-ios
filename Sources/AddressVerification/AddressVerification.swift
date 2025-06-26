@@ -179,8 +179,8 @@ public struct AddressVerificationField: View {
         if verifyLocation {
             Task {
                 await LocationTrackingService.shared.startLocationTracking(
-                    interval: pollingInterval ?? 0,
-                    duration: sessionTimeout ?? 0,
+                    interval: pollingInterval ?? 10,
+                    duration: sessionTimeout ?? 3,
                     customerID: customerID,
                     onLocationPost: { (lat, long) in
                         onLocationPost(lat, long)
