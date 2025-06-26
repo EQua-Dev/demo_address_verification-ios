@@ -31,7 +31,7 @@ let package = Package(
         .target(
             name: "AddressVerificationReactNative",
             dependencies: ["AddressVerification"],
-//            path: "Sources/ReactNative",
+            path: "Sources/AddressVerificationReactNative",
             sources: ["."],
             swiftSettings: [
                 .define("REACT_NATIVE_BUILD")
