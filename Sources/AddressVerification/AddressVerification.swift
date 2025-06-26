@@ -179,8 +179,8 @@ public struct AddressVerificationField: View {
         if verifyLocation {
             Task {
                 await LocationTrackingService.shared.startLocationTracking(
-                    interval: pollingInterval ?? 10,
-                    duration: sessionTimeout ?? 3,
+                    interval: pollingInterval ?? 10, // intervals to capture location in seconds
+                    duration: sessionTimeout ?? 30, //duration for which to run the service in seconds
                     customerID: customerID,
                     onLocationPost: { (lat, long) in
                         onLocationPost(lat, long)
@@ -246,6 +246,48 @@ extension AddressVerificationField {
         
         Task {
             await fetchConfiguration()
+        }
+    }
+}
+
+// AddressVerificationField.swift
+extension AddressVerificationField {
+    static func fetchConfigFromServer(
+        apiKey: String,
+        customerID: String
+    ) async throws -> (pollingInterval: TimeInterval, sessionTimeout: TimeInterval) {
+        guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/organization/address-verification-config") else {
+            throw URLError(.badURL)
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("*/*", forHTTPHeaderField: "accept")
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let responseData = json?["data"] as? [String: Any]
+        
+        return (
+            responseData?["geotaggingPollingInterval"] as? TimeInterval ?? 10,
+            responseData?["geotaggingSessionTimeout"] as? TimeInterval ?? 30
+        )
+    }
+    
+    func startContinuousTracking() {
+        Task {
+            await fetchConfiguration()
+            if verifyLocation, let interval = pollingInterval, let timeout = sessionTimeout {
+                await LocationTrackingService.shared.startLocationTracking(
+                    interval: interval,
+                    duration: timeout,
+                    customerID: customerID,
+                    onLocationPost: { (lat, long) in
+                        onLocationPost(lat, long)
+                    }
+                )
+            }
         }
     }
 }
