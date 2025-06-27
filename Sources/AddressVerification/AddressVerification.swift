@@ -290,6 +290,27 @@ extension AddressVerificationField {
             }
         }
     }
+    
+    public static func startTrackingWithRemoteConfig(
+           apiKey: String,
+           customerID: String,
+           onLocationPost: @escaping (Double, Double) -> Void
+       ) {
+           Task {
+               do {
+                   let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID)
+                   
+                   await LocationTrackingService.shared.startLocationTracking(
+                       interval: interval,
+                       duration: timeout,
+                       customerID: customerID,
+                       onLocationPost: onLocationPost
+                   )
+               } catch {
+                   print("Failed to fetch config or start tracking: \(error.localizedDescription)")
+               }
+           }
+       }
 }
 
 // MARK: - Search Completer Delegate
