@@ -252,7 +252,7 @@ extension AddressVerificationField {
 
 // AddressVerificationField.swift
 extension AddressVerificationField {
-    static func fetchConfigFromServer(
+    public static func fetchConfigFromServer(
         apiKey: String,
         customerID: String
     ) async throws -> (pollingInterval: TimeInterval, sessionTimeout: TimeInterval) {
