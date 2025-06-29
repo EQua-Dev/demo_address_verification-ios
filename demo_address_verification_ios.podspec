@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'demo_address_verification_ios'
-  s.version          = '1.1.6'
+  s.version          = '1.1.7'
   s.summary          = 'iOS address verification and validation module for React Native applications'
   
   s.description      = <<-DESC
@@ -24,8 +24,17 @@ Pod::Spec.new do |s|
   
   s.frameworks       = 'Foundation', 'UIKit'
   
+    # ↓↓↓ Add these critical React Native-specific settings ↓↓↓
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'SWIFT_COMPILATION_MODE' => 'wholemodule',
+    'CLANG_ENABLE_MODULES' => 'YES'
+  }
+  
   # Add any dependencies if needed
-  # s.dependency 'React-Core'
+  s.dependency 'React-Core'  # Required for RN autolinking
+  s.dependency 'React'       # Optional but recommended
+
   
   # Exclude files if necessary
   # s.exclude_files = 'Sources/Exclude'
