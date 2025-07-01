@@ -137,6 +137,7 @@ guard locationManager.authorizationStatus == .authorizedAlways ||
      }
     @MainActor
     private func sendLocationToServer(latitude: Double, longitude: Double) async {
+        print("fetched location \(latitude) \(latitude)")
         do {
             // Perform reverse geocoding
             guard let placemark = await reverseGeocode(latitude: latitude, longitude: longitude) else {

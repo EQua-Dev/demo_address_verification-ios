@@ -270,8 +270,8 @@ extension AddressVerificationField {
         let responseData = json?["data"] as? [String: Any]
         
         return (
-            responseData?["geotaggingPollingInterval"] as? TimeInterval ?? 10,
-            responseData?["geotaggingSessionTimeout"] as? TimeInterval ?? 30
+            responseData?["geotaggingPollingInterval"] as? TimeInterval ?? 10, //eventually hours
+            responseData?["geotaggingSessionTimeout"] as? TimeInterval ?? 30 //eventually days
         )
     }
     
