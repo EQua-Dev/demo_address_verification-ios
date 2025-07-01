@@ -147,7 +147,16 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     @MainActor
     private func postCurrentLocation() async {
         guard let location = locationManager.location else {
-            print("No location available")
+            print("No location available - this is common in iOS Simulator")
+                      print("Location services enabled: \(CLLocationManager.locationServicesEnabled())")
+                      print("Authorization status: \(locationManager.authorizationStatus.rawValue)")
+                      
+                      // For simulator testing, you can uncomment the lines below to use mock coordinates
+                      // let mockLatitude = 37.7749  // San Francisco
+                      // let mockLongitude = -122.4194
+                      // print("Using mock location for simulator: \(mockLatitude), \(mockLongitude)")
+                      // onLocationPost(mockLatitude, mockLongitude)
+                      // a
             return
         }
         
@@ -249,8 +258,51 @@ extension LocationTrackingService: CLLocationManagerDelegate {
         }
     }
     
+    
     nonisolated public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location manager error: \(error)")
+        if let clError = error as? CLError {
+            switch clError.code {
+            case .locationUnknown:
+                print("Location is currently unknown, but CLLocationManager will keep trying")
+            case .denied:
+                print("Location services are disabled or denied for this app")
+            case .network:
+                print("Network error - location service was unable to determine location")
+            case .headingFailure:
+                print("Heading could not be determined")
+            case .regionMonitoringDenied:
+                print("Region monitoring denied")
+            case .regionMonitoringFailure:
+                print("Region monitoring failed")
+            case .regionMonitoringSetupDelayed:
+                print("Region monitoring setup delayed")
+            case .regionMonitoringResponseDelayed:
+                print("Region monitoring response delayed")
+            case .geocodeFoundNoResult:
+                print("Geocode found no result")
+            case .geocodeFoundPartialResult:
+                print("Geocode found partial result")
+            case .geocodeCanceled:
+                print("Geocode was canceled")
+            case .deferredFailed:
+                print("Deferred mode failed")
+            case .deferredNotUpdatingLocation:
+                print("Deferred mode not updating location")
+            case .deferredAccuracyTooLow:
+                print("Deferred mode accuracy too low")
+            case .deferredDistanceFiltered:
+                print("Deferred mode distance filtered")
+            case .deferredCanceled:
+                print("Deferred mode canceled")
+            case .rangingUnavailable:
+                print("Ranging unavailable")
+            case .rangingFailure:
+                print("Ranging failure")
+            @unknown default:
+                print("Unknown location error: \(clError.localizedDescription)")
+            }
+        }
     }
     
     nonisolated public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
