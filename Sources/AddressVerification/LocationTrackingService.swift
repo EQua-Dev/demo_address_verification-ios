@@ -20,6 +20,12 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     private var onLocationPost: (@MainActor (Double, Double) -> Void) = { _, _ in }
     private var customerID: String = ""
     
+    // Store pending tracking parameters
+    private var pendingInterval: TimeInterval?
+    private var pendingDuration: TimeInterval?
+    private var pendingCustomerID: String?
+    private var pendingOnLocationPost: (@MainActor (Double, Double) -> Void)?
+    
     public override init() {
         super.init()
         locationManager.delegate = self
@@ -37,73 +43,92 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         
         print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID)")
         
+        // Store parameters in case we need to retry after authorization
+        self.pendingInterval = interval
+        self.pendingDuration = duration
+        self.pendingCustomerID = customerID
+        self.pendingOnLocationPost = onLocationPost
+        
         // Request location permission if needed
         if locationManager.authorizationStatus == .notDetermined {
             locationManager.requestAlwaysAuthorization()
             return
         }
         
+        // Clear pending parameters since we're proceeding
+        clearPendingParameters()
+        
+        await startTrackingWithCurrentAuthorization(interval: interval, duration: duration)
+    }
+    
+    private func clearPendingParameters() {
+        pendingInterval = nil
+        pendingDuration = nil
+        pendingCustomerID = nil
+        pendingOnLocationPost = nil
+    }
+    
+    private func startTrackingWithCurrentAuthorization(interval: TimeInterval, duration: TimeInterval) async {
 #if os(macOS)
-guard locationManager.authorizationStatus == .authorized else {
-    print("Location permission not granted (macOS)")
-    return
-}
+        guard locationManager.authorizationStatus == .authorized else {
+            print("Location permission not granted (macOS)")
+            return
+        }
 #else
-guard locationManager.authorizationStatus == .authorizedAlways ||
-      locationManager.authorizationStatus == .authorizedWhenInUse else {
-    print("Location permission not granted (iOS/watchOS/tvOS)")
-    return
-}
+        guard locationManager.authorizationStatus == .authorizedAlways ||
+              locationManager.authorizationStatus == .authorizedWhenInUse else {
+            print("Location permission not granted (iOS/watchOS/tvOS)")
+            return
+        }
 #endif
-
         
         // Start location updates
         locationManager.startUpdatingLocation()
         
         // Set up timers on main queue
-              setupTimers(interval: interval, duration: duration)
-              
-       
+        setupTimers(interval: interval, duration: duration)
+        
         // Post initial location
         await postCurrentLocation()
     }
     
     @MainActor
-      func stopLocationTracking() {
-          trackingTimer?.invalidate()
-          trackingTimer = nil
-          
-          sessionTimer?.invalidate()
-          sessionTimer = nil
-          
-          locationManager.stopUpdatingLocation()
-          
-          // Reset to empty closure
-          onLocationPost = { _, _ in }
-      }
+    func stopLocationTracking() {
+        trackingTimer?.invalidate()
+        trackingTimer = nil
+        
+        sessionTimer?.invalidate()
+        sessionTimer = nil
+        
+        locationManager.stopUpdatingLocation()
+        
+        // Reset to empty closure
+        onLocationPost = { _, _ in }
+        
+        // Clear pending parameters
+        clearPendingParameters()
+    }
     
-    
-     @MainActor
-     private func setupTimers(interval: TimeInterval, duration: TimeInterval) {
-         // Invalidate existing timers
-         trackingTimer?.invalidate()
-         sessionTimer?.invalidate()
-         
-         // Set up periodic location posting
-         trackingTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-             Task { [weak self] in
-                 await self?.postCurrentLocation()
-             }
-         }
-         
-         // Set up session timeout
-         sessionTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-             Task { @MainActor [weak self] in
-                 self?.stopLocationTracking()
-             }
-         }
-     }
-    
+    @MainActor
+    private func setupTimers(interval: TimeInterval, duration: TimeInterval) {
+        // Invalidate existing timers
+        trackingTimer?.invalidate()
+        sessionTimer?.invalidate()
+        
+        // Set up periodic location posting
+        trackingTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            Task { [weak self] in
+                await self?.postCurrentLocation()
+            }
+        }
+        
+        // Set up session timeout
+        sessionTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.stopLocationTracking()
+            }
+        }
+    }
     
     @MainActor
     private func reverseGeocode(latitude: Double, longitude: Double) async -> CLPlacemark? {
@@ -120,24 +145,26 @@ guard locationManager.authorizationStatus == .authorizedAlways ||
     }
     
     @MainActor
-     private func postCurrentLocation() async {
-         guard let location = locationManager.location else {
-             return
-         }
-         
-
-         let latitude = location.coordinate.latitude
-         let longitude = location.coordinate.longitude
-         
-         // Call the callback
-         onLocationPost(latitude, longitude)
-         
-         
-         await sendLocationToServer(latitude: latitude, longitude: longitude)
-     }
+    private func postCurrentLocation() async {
+        guard let location = locationManager.location else {
+            print("No location available")
+            return
+        }
+        
+        let latitude = location.coordinate.latitude
+        let longitude = location.coordinate.longitude
+        
+        print("Posting location: \(latitude), \(longitude)")
+        
+        // Call the callback
+        onLocationPost(latitude, longitude)
+        
+        await sendLocationToServer(latitude: latitude, longitude: longitude)
+    }
+    
     @MainActor
     private func sendLocationToServer(latitude: Double, longitude: Double) async {
-        print("fetched location \(latitude) \(latitude)")
+        print("fetched location \(latitude) \(longitude)")
         do {
             // Perform reverse geocoding
             guard let placemark = await reverseGeocode(latitude: latitude, longitude: longitude) else {
@@ -217,6 +244,9 @@ guard locationManager.authorizationStatus == .authorizedAlways ||
 extension LocationTrackingService: CLLocationManagerDelegate {
     nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         // No need for action here since we're manually posting locations
+        Task { @MainActor in
+            print("Location updated: \(locations.last?.coordinate.latitude ?? 0), \(locations.last?.coordinate.longitude ?? 0)")
+        }
     }
     
     nonisolated public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -224,13 +254,29 @@ extension LocationTrackingService: CLLocationManagerDelegate {
     }
     
     nonisolated public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        // Capture only the needed values (authorization status) which are Sendable
         let status = manager.authorizationStatus.rawValue
         Task { @MainActor in
             print("Authorization changed: \(status)")
-            // If you need to do something with the manager, access it freshly here:
-            let currentManager = LocationTrackingService.shared.locationManager
-            // ... use currentManager if needed
+            let service = LocationTrackingService.shared
+            
+            // Check if we have pending tracking to resume
+            if let interval = service.pendingInterval,
+               let duration = service.pendingDuration,
+               let customerID = service.pendingCustomerID,
+               let onLocationPost = service.pendingOnLocationPost {
+                
+                print("Resuming location tracking after authorization change")
+                
+                // Update the service properties
+                service.customerID = customerID
+                service.onLocationPost = onLocationPost
+                
+                // Clear pending parameters
+                service.clearPendingParameters()
+                
+                // Start tracking with the new authorization
+                await service.startTrackingWithCurrentAuthorization(interval: interval, duration: duration)
+            }
         }
     }
 }
@@ -258,4 +304,3 @@ extension LocationTrackingService {
         }
     }
 }
-
