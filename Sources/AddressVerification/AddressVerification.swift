@@ -182,6 +182,7 @@ public struct AddressVerificationField: View {
                     interval: pollingInterval ?? 10, // intervals to capture location in seconds
                     duration: sessionTimeout ?? 30, //duration for which to run the service in seconds
                     customerID: customerID,
+                    apiKey: apiKey,
                     onLocationPost: { (lat, long) in
                         onLocationPost(lat, long)
                     }
@@ -283,6 +284,7 @@ extension AddressVerificationField {
                     interval: interval,
                     duration: timeout,
                     customerID: customerID,
+                    apiKey: apiKey,
                     onLocationPost: { (lat, long) in
                         onLocationPost(lat, long)
                     }
@@ -304,6 +306,7 @@ extension AddressVerificationField {
                        interval: interval,
                        duration: timeout,
                        customerID: customerID,
+                       apiKey: apiKey,
                        onLocationPost: onLocationPost
                    )
                } catch {

@@ -19,6 +19,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     private var sessionTimer: Timer?
     private var onLocationPost: (@MainActor (Double, Double) -> Void) = { _, _ in }
     private var customerID: String = ""
+    private var apiKey: String = ""
     
     // Store pending tracking parameters
     private var pendingInterval: TimeInterval?
@@ -36,6 +37,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         interval: TimeInterval,
         duration: TimeInterval,
         customerID: String,
+        apiKey: String,
         onLocationPost: @escaping @MainActor (Double, Double) -> Void
     ) async {
         self.customerID = customerID
@@ -207,14 +209,14 @@ public final class LocationTrackingService: NSObject, ObservableObject {
                 zipCode: postalCode // Using postalCode for zipCode as well
             )
             
-            guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/verification/verify-address") else {
+            guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/verification/address") else {
                 throw URLError(.badURL)
             }
             
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("sk_rd_v1_ChoPcUQjtI9pMTivjYJ9hKXop0WeXO", forHTTPHeaderField: "x-api-key")
+            request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
             
             let jsonData = try JSONEncoder().encode(locationData)
             request.httpBody = jsonData
@@ -337,7 +339,8 @@ extension LocationTrackingService: CLLocationManagerDelegate {
 extension LocationTrackingService {
     public static func fetchCurrentLocation(
         timeout: TimeInterval = 10.0,
-        customerID: String
+        customerID: String,
+        apiKey: String
     ) async throws -> (latitude: Double, longitude: Double) {
         let service = LocationTrackingService()
         
@@ -347,6 +350,7 @@ extension LocationTrackingService {
                     interval: timeout + 1, // Ensure only one update
                     duration: timeout,
                     customerID: customerID,
+                    apiKey: apiKey,
                     onLocationPost: { lat, long in
                         continuation.resume(returning: (lat, long))
                         service.stopLocationTracking()

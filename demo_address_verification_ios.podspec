@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'demo_address_verification_ios'
-  s.version          = '1.1.10'
+  s.version          = '1.1.11'
   s.summary          = 'iOS address verification and validation module for React Native applications'
   
   s.description      = <<-DESC
