@@ -11,6 +11,7 @@ public struct LocationData: Codable {
     let country: String
     let reference: String
     let identity: String
+    let addressType: String
     let verificationLevel: String
     let longitude: Double
     let latitude: Double
@@ -20,5 +21,5 @@ public struct LocationData: Codable {
     let region: String
     let countryCode: String
     let postalCode: String
-    let zipCode: String
+//    let zipCode: String
 }

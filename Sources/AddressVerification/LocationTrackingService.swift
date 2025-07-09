@@ -19,6 +19,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     private var sessionTimer: Timer?
     private var onLocationPost: (@MainActor (Double, Double) -> Void) = { _, _ in }
     private var customerID: String = ""
+    private var addressType: String = ""
     private var apiKey: String = ""
     
     // Store pending tracking parameters
@@ -37,13 +38,15 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         interval: TimeInterval,
         duration: TimeInterval,
         customerID: String,
+        addressType: String,
         apiKey: String,
         onLocationPost: @escaping @MainActor (Double, Double) -> Void
     ) async {
+        self.addressType = addressType
         self.customerID = customerID
         self.onLocationPost = onLocationPost
         
-        print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID), apiKey: \(apiKey)")
+        print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID), apiKey: \(apiKey), addressType: \(addressType)")
         
         // Store parameters in case we need to retry after authorization
         self.pendingInterval = interval
@@ -190,13 +193,14 @@ public final class LocationTrackingService: NSObject, ObservableObject {
             let addressLineTwo = placemark.subLocality ?? ""
             let city = placemark.locality ?? "Unknown"
             let region = placemark.administrativeArea ?? "Unknown"
-            let countryCode = placemark.isoCountryCode ?? "US"
+            let countryCode = placemark.isoCountryCode ?? "NG"
             let postalCode = placemark.postalCode ?? "00000"
             
             let locationData = LocationData(
                 country: country,
                 reference: UUID().uuidString,
                 identity: customerID,
+                addressType: addressType,
                 verificationLevel: "basic",
                 longitude: longitude,
                 latitude: latitude,
@@ -205,8 +209,8 @@ public final class LocationTrackingService: NSObject, ObservableObject {
                 city: city,
                 region: region,
                 countryCode: countryCode,
-                postalCode: postalCode,
-                zipCode: postalCode // Using postalCode for zipCode as well
+                postalCode: postalCode
+//                zipCode: postalCode // Using postalCode for zipCode as well
             )
             
             guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/verification/address") else {
@@ -340,7 +344,8 @@ extension LocationTrackingService {
     public static func fetchCurrentLocation(
         timeout: TimeInterval = 10.0,
         customerID: String,
-        apiKey: String
+        apiKey: String,
+        addressType: String
     ) async throws -> (latitude: Double, longitude: Double) {
         let service = LocationTrackingService()
         
@@ -350,6 +355,7 @@ extension LocationTrackingService {
                     interval: timeout + 1, // Ensure only one update
                     duration: timeout,
                     customerID: customerID,
+                    addressType: addressType,
                     apiKey: apiKey,
                     onLocationPost: { lat, long in
                         continuation.resume(returning: (lat, long))

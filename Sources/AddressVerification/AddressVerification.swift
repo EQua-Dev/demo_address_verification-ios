@@ -20,6 +20,7 @@ public struct AddressVerificationField: View {
     private let showButton: Bool
     private let verifyLocation: Bool
     private let customerID: String
+    private let addressType: String
     private let onAddressSelected: (String, Double, Double) -> Void
     private let onLocationPost: (Double, Double) -> Void
     
@@ -33,6 +34,7 @@ public struct AddressVerificationField: View {
         initialText: String = "",
         verifyLocation: Bool = false,
         customerID: String,
+        addressType: String,
         onAddressSelected: @escaping (String, Double, Double) -> Void,
         onLocationPost: @escaping (Double, Double) -> Void
     ) {
@@ -41,6 +43,7 @@ public struct AddressVerificationField: View {
         self._query = State(initialValue: initialText)
         self.verifyLocation = verifyLocation
         self.customerID = customerID
+        self.addressType = addressType
         self.onAddressSelected = onAddressSelected
         self.onLocationPost = onLocationPost
     }
@@ -182,6 +185,7 @@ public struct AddressVerificationField: View {
                     interval: pollingInterval ?? 10, // intervals to capture location in seconds
                     duration: sessionTimeout ?? 30, //duration for which to run the service in seconds
                     customerID: customerID,
+                    addressType: addressType,
                     apiKey: apiKey,
                     onLocationPost: { (lat, long) in
                         onLocationPost(lat, long)
@@ -255,7 +259,8 @@ extension AddressVerificationField {
 extension AddressVerificationField {
     public static func fetchConfigFromServer(
         apiKey: String,
-        customerID: String
+        customerID: String,
+        addressType: String
     ) async throws -> (pollingInterval: TimeInterval, sessionTimeout: TimeInterval) {
         guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/organization/address-verification-config") else {
             throw URLError(.badURL)
@@ -285,6 +290,7 @@ extension AddressVerificationField {
                     interval: interval,
                     duration: timeout,
                     customerID: customerID,
+                    addressType: addressType,
                     apiKey: apiKey,
                     onLocationPost: { (lat, long) in
                         onLocationPost(lat, long)
@@ -297,18 +303,20 @@ extension AddressVerificationField {
     public static func startTrackingWithRemoteConfig(
            apiKey: String,
            customerID: String,
+           addressType: String,
            onLocationPost: @escaping (Double, Double) -> Void
        ) {
            
            print("apikey: \(apiKey)")
            Task {
                do {
-                   let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID)
+                   let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID, addressType: addressType)
                    
                    await LocationTrackingService.shared.startLocationTracking(
                        interval: interval,
                        duration: timeout,
                        customerID: customerID,
+                       addressType: addressType,
                        apiKey: apiKey,
                        onLocationPost: onLocationPost
                    )
