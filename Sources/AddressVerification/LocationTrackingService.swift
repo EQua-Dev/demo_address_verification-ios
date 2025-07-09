@@ -43,7 +43,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         self.customerID = customerID
         self.onLocationPost = onLocationPost
         
-        print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID)")
+        print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID), apiKey: \(apiKey)")
         
         // Store parameters in case we need to retry after authorization
         self.pendingInterval = interval
@@ -60,7 +60,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         // Clear pending parameters since we're proceeding
         clearPendingParameters()
         
-        await startTrackingWithCurrentAuthorization(interval: interval, duration: duration)
+        await startTrackingWithCurrentAuthorization(interval: interval, duration: duration, apiKey: apiKey)
     }
     
     private func clearPendingParameters() {
@@ -70,7 +70,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         pendingOnLocationPost = nil
     }
     
-    private func startTrackingWithCurrentAuthorization(interval: TimeInterval, duration: TimeInterval) async {
+    private func startTrackingWithCurrentAuthorization(interval: TimeInterval, duration: TimeInterval, apiKey: String) async {
 #if os(macOS)
         guard locationManager.authorizationStatus == .authorized else {
             print("Location permission not granted (macOS)")
@@ -88,10 +88,10 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         locationManager.startUpdatingLocation()
         
         // Set up timers on main queue
-        setupTimers(interval: interval, duration: duration)
+        setupTimers(interval: interval, duration: duration, apiKey: apiKey)
         
         // Post initial location
-        await postCurrentLocation()
+        await postCurrentLocation(apiKey: apiKey)
     }
     
     @MainActor
@@ -112,7 +112,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     }
     
     @MainActor
-    private func setupTimers(interval: TimeInterval, duration: TimeInterval) {
+    private func setupTimers(interval: TimeInterval, duration: TimeInterval, apiKey: String) {
         // Invalidate existing timers
         trackingTimer?.invalidate()
         sessionTimer?.invalidate()
@@ -120,7 +120,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         // Set up periodic location posting
         trackingTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { [weak self] in
-                await self?.postCurrentLocation()
+                await self?.postCurrentLocation(apiKey: apiKey)
             }
         }
         
@@ -147,7 +147,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     }
     
     @MainActor
-    private func postCurrentLocation() async {
+    private func postCurrentLocation(apiKey: String) async {
         guard let location = locationManager.location else {
             print("No location available - this is common in iOS Simulator")
                       print("Location services enabled: \(CLLocationManager.locationServicesEnabled())")
@@ -170,11 +170,11 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         // Call the callback
         onLocationPost(latitude, longitude)
         
-        await sendLocationToServer(latitude: latitude, longitude: longitude)
+        await sendLocationToServer(latitude: latitude, longitude: longitude, apiKey: apiKey)
     }
     
     @MainActor
-    private func sendLocationToServer(latitude: Double, longitude: Double) async {
+    private func sendLocationToServer(latitude: Double, longitude: Double, apiKey: String) async {
         print("fetched location \(latitude) \(longitude)")
         do {
             // Perform reverse geocoding
@@ -329,7 +329,7 @@ extension LocationTrackingService: CLLocationManagerDelegate {
                 service.clearPendingParameters()
                 
                 // Start tracking with the new authorization
-                await service.startTrackingWithCurrentAuthorization(interval: interval, duration: duration)
+                await service.startTrackingWithCurrentAuthorization(interval: interval, duration: duration, apiKey: service.apiKey)
             }
         }
     }
