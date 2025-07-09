@@ -261,6 +261,7 @@ extension AddressVerificationField {
             throw URLError(.badURL)
         }
         
+        print("apikey: \(apiKey)")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("*/*", forHTTPHeaderField: "accept")
@@ -298,6 +299,8 @@ extension AddressVerificationField {
            customerID: String,
            onLocationPost: @escaping (Double, Double) -> Void
        ) {
+           
+           print("apikey: \(apiKey)")
            Task {
                do {
                    let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID)
