@@ -19,7 +19,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
     private var sessionTimer: Timer?
     private var onLocationPost: (@MainActor (Double, Double) -> Void) = { _, _ in }
     private var customerID: String = ""
-    private var addressType: String = ""
+    private var token: String = ""
     private var apiKey: String = ""
     
     // Store pending tracking parameters
@@ -38,15 +38,15 @@ public final class LocationTrackingService: NSObject, ObservableObject {
         interval: TimeInterval,
         duration: TimeInterval,
         customerID: String,
-        addressType: String,
+        token: String,
         apiKey: String,
         onLocationPost: @escaping @MainActor (Double, Double) -> Void
     ) async {
-        self.addressType = addressType
+        self.token = token
         self.customerID = customerID
         self.onLocationPost = onLocationPost
         
-        print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID), apiKey: \(apiKey), addressType: \(addressType)")
+        print("Starting location tracking - Interval: \(interval), Duration: \(duration), CustomerID: \(customerID), apiKey: \(apiKey), token: \(token)")
         
         // Store parameters in case we need to retry after authorization
         self.pendingInterval = interval
@@ -197,23 +197,23 @@ public final class LocationTrackingService: NSObject, ObservableObject {
             let postalCode = placemark.postalCode ?? "00000"
             
             let locationData = LocationData(
-                country: country,
-                reference: UUID().uuidString,
+//                country: country,
+//                reference: UUID().uuidString,
                 identity: customerID,
-                addressType: addressType,
-                verificationLevel: "basic",
+//                addressType: addressType,
+//                verificationLevel: "basic",
                 longitude: longitude,
                 latitude: latitude,
-                addressLineOne: addressLineOne,
-                addressLineTwo: addressLineTwo,
-                city: city,
-                region: region,
-                countryCode: countryCode,
-                postalCode: postalCode
+                address: "\(addressLineOne) \(addressLineTwo)"
+//                addressLineTwo: addressLineTwo,
+//                city: city,
+//                region: region,
+//                countryCode: countryCode,
+//                postalCode: postalCode
 //                zipCode: postalCode // Using postalCode for zipCode as well
             )
             
-            guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/verification/address") else {
+            guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/customer/update-location") else {
                 throw URLError(.badURL)
             }
             
@@ -221,6 +221,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+            request.setValue(token, forHTTPHeaderField: "x-auth-token")
             
             let jsonData = try JSONEncoder().encode(locationData)
             request.httpBody = jsonData
@@ -345,7 +346,7 @@ extension LocationTrackingService {
         timeout: TimeInterval = 10.0,
         customerID: String,
         apiKey: String,
-        addressType: String
+        token: String
     ) async throws -> (latitude: Double, longitude: Double) {
         let service = LocationTrackingService()
         
@@ -355,7 +356,7 @@ extension LocationTrackingService {
                     interval: timeout + 1, // Ensure only one update
                     duration: timeout,
                     customerID: customerID,
-                    addressType: addressType,
+                    token: token,
                     apiKey: apiKey,
                     onLocationPost: { lat, long in
                         continuation.resume(returning: (lat, long))
