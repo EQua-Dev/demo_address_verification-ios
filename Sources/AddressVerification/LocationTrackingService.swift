@@ -213,7 +213,7 @@ public final class LocationTrackingService: NSObject, ObservableObject {
 //                zipCode: postalCode // Using postalCode for zipCode as well
             )
             
-            guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/customer/update-location") else {
+            guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/customer/add-geotag") else {
                 throw URLError(.badURL)
             }
             
