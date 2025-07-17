@@ -11,10 +11,10 @@ Pod::Spec.new do |s|
                        mapping services for accurate address resolution.
                        DESC
 
-  s.homepage         = 'https://github.com/EQua-Dev/demo_address_verification-ios'
+  s.homepage         = 'https://github.com/sourceidtechorg/sid-address-verification-ios'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'EQua Dev Team' => 'team@equa.dev' }
-  s.source           = { :git => 'https://github.com/EQua-Dev/demo_address_verification-ios.git', :tag => s.version.to_s }
+  s.author           = { 'SID Dev Team' => 'team@sid' }
+  s.source           = { :git => 'https://github.com/sourceidtechorg/sid-address-verification-ios.git', :tag => s.version.to_s }
   
   s.ios.deployment_target = '15.0'
   s.swift_version    = '5.0'
