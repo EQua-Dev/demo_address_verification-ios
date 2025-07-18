@@ -447,7 +447,9 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
     }
 
     private func fetchOrgConfig() async -> OrganisationConfigData? {
+        
         await withCheckedContinuation { continuation in
+            print("api key: \(apiKey)")
             apiHelper.fetchOrganisationConfig(apiKey: apiKey)
                 .sink(receiveCompletion: { completion in
                     if case .failure(let error) = completion {
