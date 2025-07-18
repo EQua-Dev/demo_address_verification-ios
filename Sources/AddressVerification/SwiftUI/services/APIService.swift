@@ -63,21 +63,34 @@ class ApiService {
     }
 
     func fetchOrganisationConfig(apiKey: String, completion: @escaping (Result<GetOrganisationConfigResponse, Error>) -> Void) {
-        guard let request = createRequest(endpoint: "organization/address-verification-config", method: "GET", apiKey: apiKey) else { return }
+        guard let request = createRequest(endpoint: "organization/address-verification-config", method: "GET", apiKey: apiKey) else {
+            print("❌ Invalid URL request")
+            return
+        }
 
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
+                // ✅ Print raw response before decoding
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("📦 Raw JSON Response:\n\(jsonString)")
+                }
+
                 do {
                     let decoded = try JSONDecoder().decode(GetOrganisationConfigResponse.self, from: data)
                     completion(.success(decoded))
                 } catch {
+                    print("❌ Decoding error: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             } else if let error = error {
+                print("❌ Network error: \(error.localizedDescription)")
                 completion(.failure(error))
+            } else {
+                print("❌ Unknown error: no data and no error")
             }
         }.resume()
     }
+
 
     func fetchCustomerHistory(token: String, apiKey: String, completion: @escaping (Result<CustomerAddressHistoryResponse, Error>) -> Void) {
         guard let request = createRequest(endpoint: "customer/address-history", method: "GET", token: token, apiKey: apiKey) else { return }
