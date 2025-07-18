@@ -9,7 +9,7 @@ import Foundation
 
 class ApiService {
     static let shared = ApiService()
-    private let baseUrl = "https://api.rd.usesourceid.com/v1/api/"
+    private let baseUrl = "https://api.rd.usesourceid.com/v1/api"
 
     private func createRequest<T: Codable>(
         endpoint: String,
