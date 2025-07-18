@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'demo_address_verification_ios'
-  s.version          = '1.1.16'
+  s.version          = '1.1.17'
   s.summary          = 'iOS address verification and validation module for React Native applications'
   
   s.description      = <<-DESC
@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
 
   s.homepage         = 'https://github.com/EQua-Dev/demo_address_verification-ios'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'EQua Dev Team' => 'team@equa.dev' }
+  s.author           = { 'SID Dev Team' => 'team@sid' }
   s.source           = { :git => 'https://github.com/EQua-Dev/demo_address_verification-ios.git', :tag => s.version.to_s }
   
   s.ios.deployment_target = '15.0'

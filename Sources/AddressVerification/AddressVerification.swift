@@ -184,15 +184,11 @@ public struct AddressVerificationField: View {
         
         if verifyLocation {
             Task {
-                await LocationTrackingService.shared.startLocationTracking(
-                    interval: pollingInterval ?? 10, // intervals to capture location in seconds
-                    duration: sessionTimeout ?? 30, //duration for which to run the service in seconds
-                    customerID: customerID,
+                LocationTrackingService.shared.start(
+                    apiKey: customerID,
                     token: token,
-                    apiKey: apiKey,
-                    onLocationPost: { (lat, long) in
-                        onLocationPost(lat, long)
-                    }
+                    customerID: apiKey
+                   
                 )
             }
         }
@@ -289,15 +285,11 @@ extension AddressVerificationField {
         Task {
             await fetchConfiguration()
             if verifyLocation, let interval = pollingInterval, let timeout = sessionTimeout {
-                await LocationTrackingService.shared.startLocationTracking(
-                    interval: interval,
-                    duration: timeout,
-                    customerID: customerID,
+                LocationTrackingService.shared.start(
+                    apiKey: customerID,
                     token: token,
-                    apiKey: apiKey,
-                    onLocationPost: { (lat, long) in
-                        onLocationPost(lat, long)
-                    }
+                    customerID: apiKey
+                    
                 )
             }
         }
@@ -315,13 +307,10 @@ extension AddressVerificationField {
                do {
                    let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID, token: token)
                    
-                   await LocationTrackingService.shared.startLocationTracking(
-                       interval: interval,
-                       duration: timeout,
-                       customerID: customerID,
-                       token: token,
-                       apiKey: apiKey,
-                       onLocationPost: onLocationPost
+                LocationTrackingService.shared.start(
+                    apiKey: customerID,
+                    token: apiKey,
+                    customerID: token
                    )
                } catch {
                    print("Failed to fetch config or start tracking: \(error.localizedDescription)")
