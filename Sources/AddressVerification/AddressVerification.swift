@@ -308,9 +308,9 @@ extension AddressVerificationField {
                    let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID, token: token)
                    
                 LocationTrackingService.shared.start(
-                    apiKey: customerID,
-                    token: apiKey,
-                    customerID: token
+                    apiKey: apiKey,
+                    token: token,
+                    customerID: customerID
                    )
                } catch {
                    print("Failed to fetch config or start tracking: \(error.localizedDescription)")
