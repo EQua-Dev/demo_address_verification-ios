@@ -201,9 +201,13 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
 #if os(iOS)
 func handleBackgroundGeotagTask(task: BGProcessingTask) {
     print("📦 Background geotag task started")
+    
+    var taskWasCancelled = false
 
     task.expirationHandler = {
         print("⏳ Geotag task expired before completion.")
+        taskWasCancelled = true
+
     }
 
     guard let creds = StoredCredentials.load() else {
@@ -219,7 +223,7 @@ func handleBackgroundGeotagTask(task: BGProcessingTask) {
     Task {
         await self.runScheduledGeoTagging()
 
-        if task.isCancelled {
+        if taskWasCancelled {
             print("🛑 Task was cancelled before finishing.")
             task.setTaskCompleted(success: false)
             return
