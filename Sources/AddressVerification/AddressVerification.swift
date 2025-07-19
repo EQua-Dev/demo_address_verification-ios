@@ -4,6 +4,7 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import BackgroundTasks
 
 @available(macOS 11.0, iOS 14.0, *)
 public struct AddressVerificationField: View {
@@ -295,6 +296,12 @@ extension AddressVerificationField {
         }
     }
     
+#if os(iOS)
+    public static func handleBackgroundGeotagTask(processingTask: BGProcessingTask){
+        LocationTrackingService.shared.handleBackgroundGeotagTask(task: processingTask)
+
+    }
+#endif
     public static func startTrackingWithRemoteConfig(
            apiKey: String,
            customerID: String,
