@@ -23,6 +23,7 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
     private let apiHelper = ApiHelper()
     private var apiKey = ""
     private var token = ""
+    private var refreshToken = ""
     
     private var customerID: String = ""
 
@@ -33,12 +34,13 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
     }
 
-    func start(apiKey: String, token: String, customerID: String) {
+    func start(apiKey: String, token: String, customerID: String, refreshToken: String) {
         self.apiKey = apiKey
         self.token = token
         self.customerID = customerID
+        self.refreshToken = refreshToken
         
-        StoredCredentials.save(apiKey: apiKey, token: token, customerID: customerID)
+        StoredCredentials.save(apiKey: apiKey, token: token, customerID: customerID, refreshToken: refreshToken)
 
 
         locationManager.allowsBackgroundLocationUpdates = true
@@ -149,31 +151,105 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         do {
             let placemarks = try await geocoder.reverseGeocodeLocation(location)
             let address = placemarks.first?.name ?? "Unknown address"
+            let timestamp = ISO8601DateFormatter().string(from: Date())
+
 
             let request = AddGeoTagRequest(
                 address: address,
                 latitude: coordinate.latitude,
-                longitude: coordinate.longitude
+                longitude: coordinate.longitude,
+                deviceTimestamp: timestamp
             )
-
-            await withCheckedContinuation { continuation in
-                apiHelper.addGeoTag(apiKey: apiKey, token: token, request: request)
-                    .sink(receiveCompletion: { completion in
-                        if case .failure(let error) = completion {
-                            print("Failed to post geotag: \(error)")
-                        }
-                        continuation.resume()
-                    }, receiveValue: { response in
-                        print("📍 GeoTag posted: \(response)")
-                        continuation.resume()
-                    })
-                    .store(in: &cancellables)
+            
+            
+            if isConnectedToInternet() {
+                await sendCachedGeoTags()
+                do {
+                    try await sendGeoTag(geoTag: request, token: token)
+                } catch {
+                    print("Error sending current geotag: \(error)")
+                    let cached = CachedGeoTag(
+                        address: address,
+                        latitude: coordinate.latitude,
+                        longitude: coordinate.longitude,
+                        deviceTimestamp: timestamp
+                    )
+                    GeoTagCache.save(cached)
+                }
+            } else {
+                print("📥 No internet. Caching geotag.")
+                let cached = CachedGeoTag(
+                    address: address,
+                    latitude: coordinate.latitude,
+                    longitude: coordinate.longitude,
+                    deviceTimestamp: timestamp
+                )
+                GeoTagCache.save(cached)
             }
+
 
         } catch {
             print("Reverse geocode failed: \(error)")
         }
     }
+    
+    private func sendCachedGeoTags() async {
+        let cachedTags = GeoTagCache.load()
+        guard !cachedTags.isEmpty else { return }
+
+        var allSent = true
+
+        for tag in cachedTags {
+            let request = AddGeoTagRequest(
+                address: tag.address,
+                latitude: tag.latitude,
+                longitude: tag.longitude,
+                deviceTimestamp: tag.deviceTimestamp
+            )
+
+            let result = await withCheckedContinuation { continuation in
+                apiHelper.addGeoTag(apiKey: apiKey, token: token, request: request)
+                    .sink(receiveCompletion: { completion in
+                        if case .failure(let error) = completion {
+                            print("❌ Failed cached geotag: \(error)")
+                            continuation.resume(returning: false)
+                        }
+                    }, receiveValue: { _ in
+                        print("✅ Cached geotag sent")
+                        continuation.resume(returning: true)
+                    })
+                    .store(in: &cancellables)
+            }
+
+            if !result {
+                allSent = false
+                break
+            }
+        }
+
+        if allSent {
+            GeoTagCache.clear()
+            print("🧹 Cleared cached geotags")
+        }
+    }
+    
+    private func sendGeoTag(geoTag: AddGeoTagRequest, token: String) async throws -> Bool {
+        return try await withCheckedThrowingContinuation { continuation in
+            apiHelper.addGeoTag(apiKey: apiKey, token: token, request: geoTag)
+                .sink(receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        continuation.resume(throwing: error)
+                    }
+                }, receiveValue: { response in
+                    print("📍 GeoTag posted: \(response)")
+                    continuation.resume(returning: true)
+                })
+                .store(in: &cancellables)
+        }
+    }
+
+
+
 
     func stop() {
         locationManager.stopUpdatingLocation()

@@ -1,13 +1,12 @@
 //
-//  File.swift
+//  CachedGeoTag.swift
 //  AddressVerification
 //
-//  Created by Richard Uzor on 18/07/2025.
+//  Created by Richard Uzor on 28/07/2025.
 //
 
-import Foundation
 
-struct AddGeoTagRequest: Codable {
+struct CachedGeoTag: Codable {
     let address: String
     let latitude: Double
     let longitude: Double
