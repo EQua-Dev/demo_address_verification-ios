@@ -34,8 +34,23 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         locationManager = CLLocationManager()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        
+        // Check initial capabilities
+                checkSystemCapabilities()
     }
 
+    private func checkSystemCapabilities() {
+        print("🔍 System Capabilities Check:")
+        print("   - Location Services Enabled: \(CLLocationManager.locationServicesEnabled())")
+//        print("   - Background App Refresh Available: \(UIApplication.shared.backgroundRefreshStatus.rawValue)")
+        print("   - Current Authorization: \(locationManager.authorizationStatus.rawValue)")
+        
+        #if targetEnvironment(simulator)
+        print("   - Running on Simulator: YES (Background tasks limited)")
+        #else
+        print("   - Running on Device: YES")
+        #endif
+    }
     func start(apiKey: String, token: String, customerID: String, refreshToken: String) {
         self.apiKey = apiKey
         self.token = token
@@ -44,15 +59,21 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         
         StoredCredentials.save(apiKey: apiKey, token: token, customerID: customerID, refreshToken: refreshToken)
 
+        print("🚀 Starting LocationTrackingService...")
+           print("   - API Key: \(apiKey.prefix(20))...")
+           print("   - Customer ID: \(customerID)")
+
 //
 //        locationManager.allowsBackgroundLocationUpdates = true
 //          locationManager.pausesLocationUpdatesAutomatically = false
 //          locationManager.startMonitoringSignificantLocationChanges()
 
         // Request location permissions first
-        requestLocationPermissions()
+//        requestLocationPermissions()
 
         Task {
+            await requestLocationPermissions()
+
             await self.runScheduledGeoTagging()
         }
         scheduleBackgroundGeotagTask()
