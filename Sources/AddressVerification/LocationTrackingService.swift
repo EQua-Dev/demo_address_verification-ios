@@ -51,17 +51,16 @@ class LocationTrackingService: NSObject, CLLocationManagerDelegate {
         print("   - Running on Device: YES")
         #endif
     }
-    func start(apiKey: String, token: String, customerID: String, refreshToken: String) {
+    func start(apiKey: String, token: String, refreshToken: String) {
         self.apiKey = apiKey
         self.token = token
-        self.customerID = customerID
         self.refreshToken = refreshToken
         
-        StoredCredentials.save(apiKey: apiKey, token: token, customerID: customerID, refreshToken: refreshToken)
+        StoredCredentials.save(apiKey: apiKey, token: token, refreshToken: refreshToken)
 
         print("🚀 Starting LocationTrackingService...")
            print("   - API Key: \(apiKey.prefix(20))...")
-           print("   - Customer ID: \(customerID)")
+//           print("   - Customer ID: \(customerID)")
 
 //
 //        locationManager.allowsBackgroundLocationUpdates = true
@@ -416,7 +415,6 @@ func handleBackgroundGeotagTask(task: BGProcessingTask) {
 
     self.apiKey = creds.apiKey
     self.token = creds.token
-    self.customerID = creds.customerID
     self.refreshToken = creds.refreshToken
 
 

@@ -9,21 +9,21 @@ import Foundation
 
 
 struct StoredCredentials {
-    static func save(apiKey: String, token: String, customerID: String, refreshToken: String) {
+    static func save(apiKey: String, token: String, refreshToken: String) {
         UserDefaults.standard.set(apiKey, forKey: "geo_apiKey")
         UserDefaults.standard.set(token, forKey: "geo_token")
-        UserDefaults.standard.set(customerID, forKey: "geo_customerID")
+//        UserDefaults.standard.set(customerID, forKey: "geo_customerID")
         UserDefaults.standard.set(refreshToken, forKey: "geo_refreshToken")
     }
 
-    static func load() -> (apiKey: String, token: String, customerID: String, refreshToken: String)? {
+    static func load() -> (apiKey: String, token: String, refreshToken: String)? {
         guard let apiKey = UserDefaults.standard.string(forKey: "geo_apiKey"),
               let token = UserDefaults.standard.string(forKey: "geo_token"),
-              let customerID = UserDefaults.standard.string(forKey: "geo_customerID"),
+//              let customerID = UserDefaults.standard.string(forKey: "geo_customerID"),
               let refreshToken = UserDefaults.standard.string(forKey: "geo_refreshToken") else {
             return nil
         }
-            return (apiKey, token, customerID, refreshToken)
+            return (apiKey, token, refreshToken)
     }
     
     static func update(token: String?, refreshToken: String?) {

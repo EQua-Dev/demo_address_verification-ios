@@ -215,7 +215,7 @@ class ApiService {
                         case .success(let (newToken, newRefreshToken)):
                             credentials.token = newToken
                             credentials.refreshToken = newRefreshToken
-                            StoredCredentials.save(apiKey: credentials.apiKey, token: newToken, customerID: credentials.customerID, refreshToken: newRefreshToken)
+                            StoredCredentials.save(apiKey: credentials.apiKey, token: newToken, refreshToken: newRefreshToken)
                             executeRequest(with: newToken) // Retry with new token
                         case .failure(let refreshError):
                             completion(.failure(refreshError))
@@ -281,7 +281,7 @@ class ApiService {
                         case .success(let (newToken, newRefreshToken)):
                             credentials.token = newToken
                             credentials.refreshToken = newRefreshToken
-                            StoredCredentials.save(apiKey: credentials.apiKey, token: newToken, customerID: credentials.customerID, refreshToken: newRefreshToken)
+                            StoredCredentials.save(apiKey: credentials.apiKey, token: newToken, refreshToken: newRefreshToken)
                             executeRequest(with: newToken)
                         case .failure(let refreshError):
                             completion(.failure(refreshError))
