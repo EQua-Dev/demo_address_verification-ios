@@ -20,8 +20,8 @@ public struct AddressVerificationField: View {
     private let apiKey: String
     private let showButton: Bool
     private let verifyLocation: Bool
-    private let customerID: String
     private let token: String
+    private let refreshToken: String
     private let addressType: String
     private let onAddressSelected: (String, Double, Double) -> Void
     private let onLocationPost: (Double, Double) -> Void
@@ -35,8 +35,8 @@ public struct AddressVerificationField: View {
         showButton: Bool,
         initialText: String = "",
         verifyLocation: Bool = false,
-        customerID: String,
         token: String,
+        refreshToken: String,
         addressType: String,
         onAddressSelected: @escaping (String, Double, Double) -> Void,
         onLocationPost: @escaping (Double, Double) -> Void
@@ -45,8 +45,8 @@ public struct AddressVerificationField: View {
         self.showButton = showButton
         self._query = State(initialValue: initialText)
         self.verifyLocation = verifyLocation
-        self.customerID = customerID
-        self.token = addressType
+        self.token = token
+        self.refreshToken = refreshToken
         self.addressType = addressType
         self.onAddressSelected = onAddressSelected
         self.onLocationPost = onLocationPost
@@ -186,9 +186,9 @@ public struct AddressVerificationField: View {
         if verifyLocation {
             Task {
                 LocationTrackingService.shared.start(
-                    apiKey: customerID,
+                    apiKey: apiKey,
                     token: token,
-                    customerID: apiKey
+                    refreshToken: refreshToken
                    
                 )
             }
@@ -259,8 +259,8 @@ extension AddressVerificationField {
 extension AddressVerificationField {
     public static func fetchConfigFromServer(
         apiKey: String,
-        customerID: String,
-        token: String
+        token: String,
+        refreshToken: String
     ) async throws -> (pollingInterval: TimeInterval, sessionTimeout: TimeInterval) {
         guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/organization/address-verification-config") else {
             throw URLError(.badURL)
@@ -287,9 +287,9 @@ extension AddressVerificationField {
             await fetchConfiguration()
             if verifyLocation, let interval = pollingInterval, let timeout = sessionTimeout {
                 LocationTrackingService.shared.start(
-                    apiKey: customerID,
+                    apiKey: apiKey,
                     token: token,
-                    customerID: apiKey
+                    refreshToken: refreshToken
                     
                 )
             }
@@ -304,20 +304,20 @@ extension AddressVerificationField {
 #endif
     public static func startTrackingWithRemoteConfig(
            apiKey: String,
-           customerID: String,
            token: String,
+           refreshToken: String,
            onLocationPost: @escaping (Double, Double) -> Void
        ) {
            
            print("apikey: \(apiKey)")
            Task {
                do {
-                   let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, customerID: customerID, token: token)
+                   let (interval, timeout) = try await fetchConfigFromServer(apiKey: apiKey, token: token, refreshToken: refreshToken)
                    
                 LocationTrackingService.shared.start(
                     apiKey: apiKey,
                     token: token,
-                    customerID: customerID
+                    refreshToken: refreshToken
                    )
                } catch {
                    print("Failed to fetch config or start tracking: \(error.localizedDescription)")

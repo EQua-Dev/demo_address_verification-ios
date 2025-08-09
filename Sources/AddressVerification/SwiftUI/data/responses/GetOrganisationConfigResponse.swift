@@ -16,7 +16,7 @@ struct GetOrganisationConfigResponse: Codable {
 }
 
 struct OrganisationConfigData: Codable {
-    let distanceTolerance: Int
+    let distanceTolerance: Double
     let geotaggingPollingInterval: Double
     let geotaggingSessionTimeout: Int
 }
