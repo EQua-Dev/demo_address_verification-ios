@@ -22,18 +22,20 @@ Pod::Spec.new do |s|
   s.source_files     = 'Sources/**/*.{swift,h,m}'
   s.public_header_files = 'Sources/**/*.h'
   
-  s.frameworks       = 'Foundation', 'UIKit'
+  s.frameworks       = 'Foundation', 'UIKit', 'CoreLocation' 
+
   
-    # ↓↓↓ Add these critical React Native-specific settings ↓↓↓
-  s.pod_target_xcconfig = {
+    # Universal build settings
+    s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'SWIFT_COMPILATION_MODE' => 'wholemodule',
-    'CLANG_ENABLE_MODULES' => 'YES'
+    'CLANG_ENABLE_MODULES' => 'YES',
+    'OTHER_SWIFT_FLAGS' => '-DNO_REACT' # Add compiler flag to exclude React code
   }
   
   # Add any dependencies if needed
-  s.dependency 'React-Core'  # Required for RN autolinking
-  s.dependency 'React'       # Optional but recommended
+  # s.dependency 'React-Core'  # Required for RN autolinking
+  # s.dependency 'React'       # Optional but recommended
 
   
   # Exclude files if necessary
