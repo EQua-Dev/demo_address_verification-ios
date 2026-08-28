@@ -9,24 +9,9 @@ import Foundation
 
 class ApiService {
     static let shared = ApiService()
-//    private let baseUrl = "https://api.rd.usesourceid.com/v1/api"
     
-    private func resolveBaseUrl(apiKey: String) -> String {
-        if apiKey.hasPrefix("sk_live_v1_") {
-            return "https://api.sourceid.tech/v1/api"
-        } else if apiKey.hasPrefix("sk_sbx_v1_") {
-            return "https://api.sbx.sourceid.tech/v1/api"
-        } else if apiKey.hasPrefix("sk_uat_v1_") {
-            return "https://api.uat.usesourceid.com/v1/api"
-        } else if apiKey.hasPrefix("sk_rd_v1_") {
-            return "https://api.rd.usesourceid.com/v1/api"
-        } else {
-            return "https://api.rd.usesourceid.com/v1/api" // default fallback
-        }
-    }
-
     private func baseUrl(for apiKey: String) -> String {
-        return resolveBaseUrl(apiKey: apiKey)
+        return SidEnvironment.resolveBaseUrl(apiKey: apiKey)
     }
 
 
@@ -38,7 +23,7 @@ class ApiService {
         apiKey: String,
         body: T? = nil
     ) -> URLRequest? {
-        let base = resolveBaseUrl(apiKey: apiKey)
+        let base = SidEnvironment.resolveBaseUrl(apiKey: apiKey)
         guard let url = URL(string: "\(base)/\(endpoint)") else { return nil }
 
 //        guard let url = URL(string: "\(baseUrl)/\(endpoint)") else { return nil }
@@ -77,7 +62,7 @@ class ApiService {
         apiKey: String
     ) -> URLRequest? {
         
-        let base = resolveBaseUrl(apiKey: apiKey)
+        let base = SidEnvironment.resolveBaseUrl(apiKey: apiKey)
         guard let url = URL(string: "\(base)/\(endpoint)") else { return nil }
 
 //        guard let url = URL(string: "\(baseUrl)/\(endpoint)") else { return nil }

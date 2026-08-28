@@ -87,7 +87,7 @@ public class AddressVerification {
         apiKey: String,
         customerID: String
     ) async throws -> (pollingInterval: TimeInterval, sessionTimeout: TimeInterval) {
-        guard let url = URL(string: "https://api.rd.usesourceid.com/v1/api/organization/address-verification-config") else {
+        guard let url = SidEnvironment.addressVerificationConfigURL(apiKey: apiKey) else {
             throw URLError(.badURL)
         }
         
